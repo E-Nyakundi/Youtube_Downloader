@@ -7,7 +7,6 @@ from pydub import AudioSegment  # For audio conversion
 from datetime import time
 
 logging.basicConfig(level=logging.INFO)
-co
 
 class VideoDownloader:
     def __init__(self, resume=False, audio_only=False, max_retries=5, cookies_path=None):
