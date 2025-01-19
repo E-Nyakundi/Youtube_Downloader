@@ -1,106 +1,75 @@
+from django.http import HttpResponse, FileResponse
+from django.views.generic.edit import FormView
+from django.urls import reverse_lazy
+from django.shortcuts import render
+from .forms import DownloadForm
+from .video_downloader import VideoDownloader, VideoDetailsFetcher
 import os
 import logging
-import re
-import yt_dlp
-import browsercookie
-from time import sleep
-from pydub import AudioSegment
-from datetime import time
 
-logging.basicConfig(level=logging.INFO)
+class DownloadView(FormView):
+    template_name = 'youtube_downloader/index.html'
+    form_class = DownloadForm
+    success_url = reverse_lazy('download_video')
 
-class VideoDownloader:
-    def __init__(self, resume=False, audio_only=False, max_retries=5):
-        self.resume = resume
-        self.audio_only = audio_only
-        self.max_retries = max_retries
-        self.cookies_path = self.get_browser_cookies()
+    def get_common_qualities(self, videos):
+        """Return common qualities across all videos in the playlist."""
+        all_qualities = [set(video['qualities']) for video in videos]
+        common_qualities = set.intersection(*all_qualities)
+        return list(common_qualities)
 
-    def get_browser_cookies(self):
-        """Fetch cookies from the browser (Chrome or Firefox)."""
+    def form_valid(self, form):
+        url = form.cleaned_data['url']
         try:
-            # Attempt to get cookies from Chrome
-            cookies = browsercookie.chrome()  # If using Chrome, change to .firefox() for Firefox
-            return cookies
+            if 'playlist' in url:
+                playlist_details = VideoDetailsFetcher.get_playlist_details(url)
+                videos = playlist_details['videos']  # List of video details
+
+                # Get common qualities across all videos
+                common_qualities = self.get_common_qualities(videos)
+                playlist_details['common_qualities'] = common_qualities
+
+                if not common_qualities:
+                    return HttpResponse("No common quality found across all videos.")
+
+            else:
+                playlist_details = VideoDetailsFetcher.get_video_details(url)
+
+            context = {
+                'form': form,
+                'details': playlist_details,
+                'url': url,
+            }
+            return render(self.request, self.template_name, context)
+
         except Exception as e:
-            logging.error(f"Error fetching cookies: {e}")
-            return None  # If cookies can't be fetched, handle the error appropriately
+            logging.error(f"Error occurred: {str(e)}")
+            return HttpResponse(f"An error occurred: {str(e)}")
 
-    def sanitize_filename(self, title):
-        sanitized_title = re.sub(r'[<>:"/\\|?*]', '', title)
-        max_filename_length = 255
-        if len(sanitized_title) > max_filename_length:
-            sanitized_title = sanitized_title[:max_filename_length]
-        return sanitized_title
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            if 'download' in request.POST:
+                url = request.POST.get('url')
+                selected_quality = request.POST.get('selected_quality')
+                try:
+                    video_downloader = VideoDownloader(audio_only='Audio Only' in selected_quality)
+                    if 'playlist' in url:
+                        file_paths = video_downloader.download_playlist(url, selected_quality)
+                    else:
+                        file_path = video_downloader.download_video(url, selected_quality)
+                        file_paths = [file_path] if file_path else []
 
-    def download_video(self, video_url, selected_quality=None):
-        """Download video or audio with selected quality."""
-        if self.audio_only:
-            format_option = 'bestaudio/best'  # Audio only format
+                    # Prepare the response
+                    response = FileResponse(open(file_paths[0], 'rb'), as_attachment=True)
+                    file_size = os.path.getsize(file_paths[0])
+                    response['Content-Length'] = file_size
+                    return response
+
+                except Exception as e:
+                    logging.error(f"Download error: {str(e)}")
+                    return HttpResponse(f"An error occurred: {str(e)}")
+
+            return self.form_valid(form)
         else:
-            format_option = selected_quality if selected_quality else 'bestvideo+bestaudio/best'
-
-        ydl_opts = {
-            'format': format_option,  # Use selected quality or audio-only
-            'cookies': self.cookies_path,  # Pass the cookies to yt-dlp
-            'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(title)s.%(ext)s'),  # Save to Downloads folder
-            'noplaylist': True,  # Avoid downloading playlists
-            'quiet': False,  # Show download progress
-        }
-
-        retries = 0
-        while retries <= self.max_retries:
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    result = ydl.extract_info(video_url, download=True)  # Download the video
-                    filename = ydl.prepare_filename(result)  # Get the final file name
-                    logging.info(f"Downloaded: {filename}")
-                    
-                    # If audio-only is selected, check if the file is already audio
-                    if self.audio_only and filename.endswith('.mp4'):
-                        self.convert_mp4_to_mp3(filename)
-                    
-                    return filename  # Return the path to the downloaded file
-            except Exception as e:
-                logging.error(f"Error occurred while downloading: {video_url}")
-                logging.error(f"Error message: {str(e)}")
-                retries += 1
-                logging.info(f"Retrying download for video: {video_url} (Retry {retries}/{self.max_retries})")
-                sleep(5 * retries)
-
-        if retries > self.max_retries:
-            logging.warning(f"Max retries reached for video: {video_url}. Skipping download.")
-            return None
-
-    def download_playlist(self, playlist_url, selected_quality=None):
-        """Download a playlist with selected quality."""
-        ydl_opts = {
-            'format': selected_quality or 'best',  # Default to best quality
-            'cookies': self.cookies_path,  # Pass the cookies to yt-dlp
-            'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(playlist)s/%(title)s.%(ext)s'),
-            'quiet': False,
-        }
-
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                result = ydl.extract_info(playlist_url, download=True)
-                logging.info(f"Downloaded playlist: {result['title']}")
-                return result  # Return playlist details (if needed)
-        except Exception as e:
-            logging.error(f"Error occurred while downloading playlist: {playlist_url}")
-            logging.error(f"Error message: {str(e)}")
-            return None
-
-    def convert_mp4_to_mp3(self, mp4_filename):
-        """Convert the downloaded MP4 to MP3."""
-        mp3_filename = mp4_filename.rsplit('.', 1)[0] + '.mp3'
-        try:
-            # Using pydub to convert mp4 to mp3
-            audio = AudioSegment.from_file(mp4_filename, format="mp4")
-            audio.export(mp3_filename, format="mp3")
-            os.remove(mp4_filename)  # Delete the original mp4 file
-            logging.info(f"Converted {mp4_filename} to {mp3_filename}")
-            return mp3_filename
-        except Exception as e:
-            logging.error(f"Error occurred while converting {mp4_filename} to mp3: {str(e)}")
-            return None
+            return self.form_invalid(form)
