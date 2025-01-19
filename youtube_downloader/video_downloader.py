@@ -30,6 +30,7 @@ class VideoDownloader:
 
         ydl_opts = {
             'format': format_option,  # Use selected quality or audio-only
+            'cookiefile': cookies_path,
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(title)s.%(ext)s'),  # Save to Downloads folder
             'noplaylist': True,  # Avoid downloading playlists
             'quiet': False,  # Show download progress
@@ -63,6 +64,7 @@ class VideoDownloader:
         """Download a playlist with selected quality."""
         ydl_opts = {
             'format': selected_quality or 'best',  # Default to best quality
+            'cookiefile': cookies_path,
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(playlist)s/%(title)s.%(ext)s'),
             'quiet': False,
         }
@@ -98,6 +100,7 @@ class VideoDetailsFetcher:
         ydl_opts = {
             'quiet': True,
             'format': 'best',  # Default to best quality
+            'cookiefile': cookies_path,
         }
 
         try:
@@ -125,6 +128,7 @@ class VideoDetailsFetcher:
         ydl_opts = {
             'quiet': True,
             'format': 'best',
+            'cookiefile': cookies_path,
         }
 
         try:
