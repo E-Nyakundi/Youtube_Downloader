@@ -22,9 +22,10 @@ class DownloadView(FormView):
 
     def form_valid(self, form):
         url = form.cleaned_data['url']
+        cookies_path = form.cleaned_data.get('cookies_path', None)  # Add cookies path from the form
         try:
             if 'playlist' in url:
-                playlist_details = VideoDetailsFetcher.get_playlist_details(url)
+                playlist_details = VideoDetailsFetcher.get_playlist_details(url, cookies_path=cookies_path)
                 videos = playlist_details['videos']  # List of video details
 
                 # Get common qualities across all videos
@@ -35,7 +36,7 @@ class DownloadView(FormView):
                     return HttpResponse("No common quality found across all videos.")
 
             else:
-                playlist_details = VideoDetailsFetcher.get_video_details(url)
+                playlist_details = VideoDetailsFetcher.get_video_details(url, cookies_path=cookies_path)
 
             context = {
                 'form': form,
@@ -54,8 +55,9 @@ class DownloadView(FormView):
             if 'download' in request.POST:
                 url = request.POST.get('url')
                 selected_quality = request.POST.get('selected_quality')
+                cookies_path = request.POST.get('cookies_path', None)  # Add cookies path from the form
                 try:
-                    video_downloader = VideoDownloader(audio_only='Audio Only' in selected_quality)
+                    video_downloader = VideoDownloader(audio_only='Audio Only' in selected_quality, cookies_path=cookies_path)
                     if 'playlist' in url:
                         file_paths = video_downloader.download_playlist(url, selected_quality)
                     else:

@@ -9,10 +9,11 @@ from datetime import time
 logging.basicConfig(level=logging.INFO)
 
 class VideoDownloader:
-    def __init__(self, resume=False, audio_only=False, max_retries=5):
+    def __init__(self, resume=False, audio_only=False, max_retries=5, cookies_path=None):
         self.resume = resume
         self.audio_only = audio_only
         self.max_retries = max_retries
+        self.cookies_path = cookies_path  # Path to the cookies file
 
     def sanitize_filename(self, title):
         sanitized_title = re.sub(r'[<>:"/\\|?*]', '', title)
@@ -30,7 +31,7 @@ class VideoDownloader:
 
         ydl_opts = {
             'format': format_option,  # Use selected quality or audio-only
-            'cookiefile': cookies_path,
+            'cookiefile': self.cookies_path,  # Use provided cookies file
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(title)s.%(ext)s'),  # Save to Downloads folder
             'noplaylist': True,  # Avoid downloading playlists
             'quiet': False,  # Show download progress
@@ -64,7 +65,7 @@ class VideoDownloader:
         """Download a playlist with selected quality."""
         ydl_opts = {
             'format': selected_quality or 'best',  # Default to best quality
-            'cookiefile': cookies_path,
+            'cookiefile': self.cookies_path,  # Use provided cookies file
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(playlist)s/%(title)s.%(ext)s'),
             'quiet': False,
         }
@@ -96,11 +97,11 @@ class VideoDownloader:
 
 class VideoDetailsFetcher:
     @staticmethod
-    def get_video_details(video_url):
+    def get_video_details(video_url, cookies_path=None):
         ydl_opts = {
             'quiet': True,
             'format': 'best',  # Default to best quality
-            'cookiefile': cookies_path,
+            'cookiefile': cookies_path,  # Use provided cookies file
         }
 
         try:
@@ -124,11 +125,11 @@ class VideoDetailsFetcher:
             return None
 
     @staticmethod
-    def get_playlist_details(playlist_url):
+    def get_playlist_details(playlist_url, cookies_path=None):
         ydl_opts = {
             'quiet': True,
             'format': 'best',
-            'cookiefile': cookies_path,
+            'cookiefile': cookies_path,  # Use provided cookies file
         }
 
         try:
