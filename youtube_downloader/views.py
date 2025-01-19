@@ -5,34 +5,46 @@ from django.shortcuts import render
 from .forms import DownloadForm
 from .video_downloader import VideoDownloader, VideoDetailsFetcher
 import os
+import logging
 
 class DownloadView(FormView):
     template_name = 'youtube_downloader/index.html'
     form_class = DownloadForm
     success_url = reverse_lazy('download_video')
 
+    def get_common_qualities(self, videos):
+        # Extract quality options from each video
+        all_qualities = [set(video['qualities']) for video in videos]
+
+        # Find common qualities across all videos
+        common_qualities = set.intersection(*all_qualities)
+        return list(common_qualities)
+
     def form_valid(self, form):
         url = form.cleaned_data['url']
-        selected_quality = form.cleaned_data['selected_quality']
         try:
             if 'playlist' in url:
-                details = VideoDetailsFetcher.get_playlist_details(url)
+                playlist_details = VideoDetailsFetcher.get_playlist_details(url)
+                videos = playlist_details['videos']  # List of video details
+
+                # Get common qualities across all videos
+                common_qualities = self.get_common_qualities(videos)
+                playlist_details['common_qualities'] = common_qualities
+
+                if not common_qualities:
+                    return HttpResponse("No common quality found across all videos.")
+
             else:
-                details = VideoDetailsFetcher.get_video_details(url)
-            
-            if not details:
-                return HttpResponse("Failed to fetch video details. Please try again later.")
+                playlist_details = VideoDetailsFetcher.get_video_details(url)
 
             context = {
                 'form': form,
-                'details': details,
-                'selected_quality': selected_quality,
+                'details': playlist_details,
                 'url': url,
             }
             return render(self.request, self.template_name, context)
 
         except Exception as e:
-            logging.error(f"Error occurred: {str(e)}")
             return HttpResponse(f"An error occurred: {str(e)}")
 
 
@@ -43,7 +55,7 @@ class DownloadView(FormView):
                 url = request.POST.get('url')
                 selected_quality = request.POST.get('selected_quality')
                 try:
-                    video_downloader = VideoDownloader()
+                    video_downloader = VideoDownloader(audio_only='Audio Only' in selected_quality)
                     if 'playlist' in url:
                         file_paths = video_downloader.download_playlist(url, selected_quality)
                     else:
@@ -51,8 +63,8 @@ class DownloadView(FormView):
                         file_paths = [file_path] if file_path else []
 
                     # Prepare the response
-                    response = FileResponse(open(file_path, 'rb'), as_attachment=True)
-                    file_size = os.path.getsize(file_path)
+                    response = FileResponse(open(file_paths[0], 'rb'), as_attachment=True)
+                    file_size = os.path.getsize(file_paths[0])
                     response['Content-Length'] = file_size
                     return response
 

@@ -4,126 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Downloader</title>
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .thumbnail img {
+            max-width: 100%;
+            height: auto;
+        }
+        .form-check {
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="mt-5">YouTube Downloader</h1>
+        <h1 class="mt-5 text-center">YouTube Downloader</h1>
+        <hr>
+
+        <!-- Form to Get Video/Playlist Details -->
         <form method="post" class="mt-3">
             {% csrf_token %}
             <div class="form-group">
-                {{ form.url.label_tag }}
-                {{ form.url }}
+                <label for="urlInput">Enter YouTube Video/Playlist URL:</label>
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    name="url" 
+                    class="form-control" 
+                    placeholder="Paste the URL here..." 
+                    required>
             </div>
-            
-            <button type="submit" class="btn btn-primary">Get Details</button>
+            <button type="submit" class="btn btn-primary btn-block">Get Details</button>
         </form>
 
+        <!-- Display Video/Playlist Details -->
         {% if details %}
             <div class="mt-5">
-                <h2>Details:</h2>
+                <h2>Details</h2>
                 <p><strong>Title:</strong> {{ details.title }}</p>
                 <p><strong>Description:</strong> {{ details.description }}</p>
-                
-                <p><img src="{{ details.thumbnail_url }}" alt="Thumbnail"></p>
-                
+                <div class="thumbnail">
+                    <img src="{{ details.thumbnail_url|default:'placeholder.jpg' }}" alt="Thumbnail">
+                </div>
                 <hr>
 
-                <div class="form-group">
-                    <label>Select Quality:</label><br>
-                    {% for streamm in details.streams %}
-                        {% if streamm.filesize > 0 %}
-                            {% if streamm.resolution %}
-                                <!-- Video Formats -->
-                                {% if streamm.resolution == "1920x1080" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="1080p" name="selected_quality" value="1080p" class="form-check-input">
-                                        <label for="1080p" class="form-check-label">
-                                            1080p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.resolution == "1280x720" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="720p" name="selected_quality" value="720p" class="form-check-input">
-                                        <label for="720p" class="form-check-label">
-                                            720p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.resolution == "854x480" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="480p" name="selected_quality" value="480p" class="form-check-input">
-                                        <label for="480p" class="form-check-label">
-                                            480p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.resolution == "640x360" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="360p" name="selected_quality" value="360p" class="form-check-input">
-                                        <label for="360p" class="form-check-label">
-                                            360p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.resolution == "426x240" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="240p" name="selected_quality" value="240p" class="form-check-input">
-                                        <label for="240p" class="form-check-label">
-                                            240p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.resolution == "256x144" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="144p" name="selected_quality" value="144p" class="form-check-input">
-                                        <label for="144p" class="form-check-label">
-                                            144p Video - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% endif %}
-                            {% elif streamm.abr %}
-                                <!-- Audio Formats -->
-                                {% if streamm.abr == 128 %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="mp3_128" name="selected_quality" value="mp3 128k" class="form-check-input">
-                                        <label for="mp3_128" class="form-check-label">
-                                            MP3 128k Audio - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.abr == 256 %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="mp3_256" name="selected_quality" value="mp3 256k" class="form-check-input">
-                                        <label for="mp3_256" class="form-check-label">
-                                            MP3 256k Audio - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.abr == 320 %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="mp3_320" name="selected_quality" value="mp3 320k" class="form-check-input">
-                                        <label for="mp3_320" class="form-check-label">
-                                            MP3 320k Audio - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% elif streamm.abr == "audio only" %}
-                                    <div class="form-check form-check-inline">
-                                        <input type="radio" id="audio_only" name="selected_quality" value="Audio Only" class="form-check-input">
-                                        <label for="audio_only" class="form-check-label">
-                                            Audio Only - {{ streamm.filesize | filesizeformat }}
-                                        </label>
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                 
-                
-
-                <form method="post">
+                <!-- Quality Selection -->
+                <form method="post" class="mt-4">
                     {% csrf_token %}
                     <input type="hidden" name="url" value="{{ url }}">
-                    <input type="hidden" name="selected_quality" value="{{ selected_quality }}">
-                    <button type="submit" name="download" class="btn btn-success">Download</button>
+                    <div class="form-group">
+                        <label for="qualityOptions">Select Quality:</label>
+                        {% for stream in details.streams %}
+                            {% if stream.resolution or stream.abr %}
+                                <div class="form-check">
+                                    <input 
+                                        type="radio" 
+                                        id="stream_{{ forloop.counter }}" 
+                                        name="selected_quality" 
+                                        value="{{ stream.format_id }}" 
+                                        class="form-check-input">
+                                    <label for="stream_{{ forloop.counter }}" class="form-check-label">
+                                        {{ stream.resolution|default:"Audio Only" }} - 
+                                        {{ stream.filesize|default:"Unknown size"|filesizeformat }}
+                                    </label>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <button type="submit" name="download" class="btn btn-success btn-block">Download</button>
                 </form>
             </div>
         {% endif %}
+
+        <!-- Error Message Display -->
+        {% if error_message %}
+            <div class="alert alert-danger mt-4">
+                {{ error_message }}
+            </div>
+        {% endif %}
     </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 </body>
 </html>
+
+
+
+

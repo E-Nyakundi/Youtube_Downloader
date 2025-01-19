@@ -5,13 +5,7 @@ class DownloadForm(forms.Form):
         'class': 'form-control',
         'placeholder': 'Enter video or playlist URL'
     }))
-    QUALITY_CHOICES = [
-        ('128K', '128K'),
-        ('256K', '256K'),
-        ('360P', '360P'),
-        ('480P', '480P'),
-        ('720P', '720P'),
-        ('1080P', '1080P'),
-    ]
 
-    selected_quality = forms.ChoiceField(label='Select Quality', choices=QUALITY_CHOICES, required=False, widget=forms.RadioSelect)
+    # Placeholder for dynamic quality options (set in the view)
+    selected_quality = forms.CharField(label='Select Quality', required=False, widget=forms.RadioSelect)
+
