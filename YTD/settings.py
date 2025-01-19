@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-_nndl&39rfe8b(fo5bt-*#wp!#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["*"]  # Update this with your Vercel URL later (or use "*")
+ALLOWED_HOSTS = [".vercel.app","127.0.0.1",".now.sh"]  # Update this with your Vercel URL later (or use "*")
 
 # Application definition
 
@@ -76,8 +76,12 @@ WSGI_APPLICATION = "YTD.wsgi.application"
 # Database setup
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "railway",
+        "USER":"postgres",
+        "PASSWORD":"MJwAVElMTCOHHJJqnPmCEvGJGuilFdiP",
+        "HOST":"junction.proxy.rlwy.net",
+        "PORT":"31017",
     }
 }
 
@@ -117,11 +121,14 @@ USE_TZ = True
 
 # Static files settings
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # Where static files are collected
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # Optimize static file serving
+STATICFILES_DIR = [os.path.join(BASE_DIR, "static")]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles_build", "static")  # Where static files are collected
 
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+INTERNAL_IPS = "127.0.0.1"
