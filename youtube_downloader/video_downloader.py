@@ -97,27 +97,24 @@ class VideoDownloader:
 
 class VideoDetailsFetcher:
     @staticmethod
-    def get_video_details(video_url, cookies_path=None):
+    def get_video_details(video_url, cookies_file='cookie.json'):
         ydl_opts = {
             'quiet': True,
-            'format': 'best',  # Default to best quality
-            'cookiefile': cookies_path,  # Use provided cookies file
+            'format': 'best',
+            'cookiefile': cookies_file,  # Use the provided cookies file
         }
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                result = ydl.extract_info(video_url, download=False)  # Don't download, just fetch details
+                result = ydl.extract_info(video_url, download=False)
                 formats = result.get('formats', [])
-                
-                # Explicitly check for audio-only formats
-                audio_formats = [f for f in formats if f.get('vcodec') == 'none']  # Audio-only formats
-                streams = formats + audio_formats  # Combine video and audio-only streams
-                
+                audio_formats = [f for f in formats if f.get('vcodec') == 'none']
+                streams = formats + audio_formats
                 return {
                     'title': result.get('title'),
                     'thumbnail_url': result.get('thumbnail'),
                     'description': result.get('description'),
-                    'streams': streams,  # Return both audio and video streams
+                    'streams': streams,
                 }
         except Exception as e:
             logging.error(f"Error occurred while fetching video details for {video_url}")
@@ -125,11 +122,11 @@ class VideoDetailsFetcher:
             return None
 
     @staticmethod
-    def get_playlist_details(playlist_url, cookies_path=None):
+    def get_playlist_details(playlist_url, cookies_file='cookie.json'):
         ydl_opts = {
             'quiet': True,
             'format': 'best',
-            'cookiefile': cookies_path,  # Use provided cookies file
+            'cookiefile': cookies_file,
         }
 
         try:
@@ -142,7 +139,6 @@ class VideoDetailsFetcher:
                     'videos': [],
                 }
 
-                # Extract details for each video in the playlist
                 for video in result.get('entries', []):
                     video_details = {
                         'title': video.get('title'),
