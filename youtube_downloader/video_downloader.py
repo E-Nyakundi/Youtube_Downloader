@@ -8,8 +8,9 @@ from datetime import time
 
 logging.basicConfig(level=logging.INFO)
 
+
 class VideoDownloader:
-    def __init__(self, resume=False, audio_only=False, max_retries=5, cookies_path=None):
+    def __init__(self, resume=False, audio_only=False, max_retries=5, cookies_path="cookie.json"):
         self.resume = resume
         self.audio_only = audio_only
         self.max_retries = max_retries
@@ -97,7 +98,7 @@ class VideoDownloader:
 
 class VideoDetailsFetcher:
     @staticmethod
-    def get_video_details(video_url, cookies_path=None):
+    def get_video_details(video_url, cookies_path="cookie.json"):
         ydl_opts = {
             'quiet': True,
             'format': 'best',  # Default to best quality
