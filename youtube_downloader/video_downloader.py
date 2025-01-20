@@ -119,7 +119,7 @@ class VideoDetailsFetcher:
             'quiet': True,
             'format': 'best',  # Default to best quality
             'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
-
+        }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 result = ydl.extract_info(video_url, download=False)  # Don't download, just fetch details
