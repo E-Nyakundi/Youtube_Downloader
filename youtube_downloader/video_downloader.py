@@ -10,21 +10,9 @@ from datetime import time
 logging.basicConfig(level=logging.INFO)
 
 class VideoDownloader:
-    def __init__(self, resume=False, audio_only=False, max_retries=5):
-        self.resume = resume
+    def __init__(self, audio_only=False):
         self.audio_only = audio_only
-        self.max_retries = max_retries
-        self.cookies_path = self.get_browser_cookies()
-
-    def get_browser_cookies(self):
-        """Fetch cookies from the browser (Chrome or Firefox)."""
-        try:
-            # Attempt to get cookies from Chrome
-            cookies = browsercookie.chrome()  # If using Chrome, change to .firefox() for Firefox
-            return cookies
-        except Exception as e:
-            logging.error(f"Error fetching cookies: {e}")
-            return None  # If cookies can't be fetched, handle the error appropriately
+        self.cookie_file = os.path.join(os.path.dirname(__file__), "cookies.txt")
 
     def sanitize_filename(self, title):
         sanitized_title = re.sub(r'[<>:"/\\|?*]', '', title)
@@ -42,7 +30,7 @@ class VideoDownloader:
 
         ydl_opts = {
             'format': format_option,  # Use selected quality or audio-only
-            'cookies': self.cookies_path,  # Pass the cookies to yt-dlp
+            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(title)s.%(ext)s'),  # Save to Downloads folder
             'noplaylist': True,  # Avoid downloading playlists
             'quiet': False,  # Show download progress
