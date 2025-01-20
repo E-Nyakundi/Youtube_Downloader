@@ -11,16 +11,17 @@ import fetch_cookies  # Import the fetch_cookies function
 logging.basicConfig(level=logging.INFO)
 
 class VideoDownloader:
-    def __init__(self, audio_only=False, cookie_file='cookies.txt'):
+    def __init__(self, audio_only=False, cookie_file='cookies.txt', max_retries=3):
         self.audio_only = audio_only
         self.cookie_file = os.path.join(os.path.dirname(__file__), cookie_file)
         self.cookie_lifetime = 86400  # Cookie validity in seconds (e.g., 1 day)
+        self.max_retries = max_retries  # Define max retries
 
     def ensure_cookies(self):
         """Ensure the cookies file exists and is up-to-date."""
         if not os.path.exists(self.cookie_file) or self.cookies_expired():
             print("Fetching new cookies...")
-            fetch_cookies(self.cookie_file)
+            fetch_cookies.fetch_cookies(self.cookie_file)  # Call fetch_cookies function correctly
 
     def cookies_expired(self):
         """Check if the cookie file is older than the defined lifetime."""
@@ -47,7 +48,7 @@ class VideoDownloader:
 
         ydl_opts = {
             'format': format_option,  # Use selected quality or audio-only
-            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
+            'cookies': self.cookie_file,  # Pass the cookies to yt-dlp (fixed the variable name)
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(title)s.%(ext)s'),  # Save to Downloads folder
             'noplaylist': True,  # Avoid downloading playlists
             'quiet': False,  # Show download progress
@@ -81,7 +82,7 @@ class VideoDownloader:
         """Download a playlist with selected quality."""
         ydl_opts = {
             'format': selected_quality or 'best',  # Default to best quality
-            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
+            'cookies': self.cookie_file,  # Pass the cookies to yt-dlp
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(playlist)s/%(title)s.%(ext)s'),
             'quiet': False,
         }
@@ -111,14 +112,13 @@ class VideoDownloader:
             return None
 
 
-
 class VideoDetailsFetcher:
     @staticmethod
     def get_video_details(video_url, cookies_path=None):
         ydl_opts = {
             'quiet': True,
             'format': 'best',  # Default to best quality
-            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
+            'cookies': cookies_path,  # Corrected to use the passed cookies_path
         }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -145,7 +145,7 @@ class VideoDetailsFetcher:
         ydl_opts = {
             'quiet': True,
             'format': 'best',
-            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
+            'cookies': cookies_path,  # Corrected to use the passed cookies_path
         }
 
         try:
