@@ -81,7 +81,7 @@ class VideoDownloader:
         """Download a playlist with selected quality."""
         ydl_opts = {
             'format': selected_quality or 'best',  # Default to best quality
-            'cookies': self.cookies_path,  # Pass the cookies to yt-dlp
+            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
             'outtmpl': os.path.join(os.path.expanduser('~'), 'Downloads', '%(playlist)s/%(title)s.%(ext)s'),
             'quiet': False,
         }
@@ -118,8 +118,7 @@ class VideoDetailsFetcher:
         ydl_opts = {
             'quiet': True,
             'format': 'best',  # Default to best quality
-            'cookiefile': cookies_path,  # Use provided cookies file
-        }
+            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -146,7 +145,7 @@ class VideoDetailsFetcher:
         ydl_opts = {
             'quiet': True,
             'format': 'best',
-            'cookiefile': cookies_path,  # Use provided cookies file
+            'cookies': self.cookies_file,  # Pass the cookies to yt-dlp
         }
 
         try:
