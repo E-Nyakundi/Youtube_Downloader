@@ -2,16 +2,6 @@ import os
 import logging
 import re
 import yt_dlp
-from time import sleep
-from pydub import AudioSegment  # For audio conversion
-from datetime import time
-
-logging.basicConfig(level=logging.INFO)
-
-import os
-import logging
-import re
-import yt_dlp
 import browsercookie
 from time import sleep
 from pydub import AudioSegment
