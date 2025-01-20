@@ -6,13 +6,29 @@ import browsercookie
 from time import sleep
 from pydub import AudioSegment
 from datetime import time
+import fetch_cookies  # Import the fetch_cookies function
 
 logging.basicConfig(level=logging.INFO)
 
 class VideoDownloader:
-    def __init__(self, audio_only=False):
+    def __init__(self, audio_only=False, cookie_file='cookies.txt'):
         self.audio_only = audio_only
-        self.cookie_file = os.path.join(os.path.dirname(__file__), "cookies.txt")
+        self.cookie_file = os.path.join(os.path.dirname(__file__), cookie_file)
+        self.cookie_lifetime = 86400  # Cookie validity in seconds (e.g., 1 day)
+
+    def ensure_cookies(self):
+        """Ensure the cookies file exists and is up-to-date."""
+        if not os.path.exists(self.cookie_file) or self.cookies_expired():
+            print("Fetching new cookies...")
+            fetch_cookies(self.cookie_file)
+
+    def cookies_expired(self):
+        """Check if the cookie file is older than the defined lifetime."""
+        if not os.path.exists(self.cookie_file):
+            return True
+        last_modified = os.path.getmtime(self.cookie_file)
+        return (time.time() - last_modified) > self.cookie_lifetime
+
 
     def sanitize_filename(self, title):
         sanitized_title = re.sub(r'[<>:"/\\|?*]', '', title)
@@ -22,6 +38,7 @@ class VideoDownloader:
         return sanitized_title
 
     def download_video(self, video_url, selected_quality=None):
+        self.ensure_cookies()  # Ensure cookies are available and up-to-date
         """Download video or audio with selected quality."""
         if self.audio_only:
             format_option = 'bestaudio/best'  # Audio only format
